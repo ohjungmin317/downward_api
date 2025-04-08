@@ -1,23 +1,26 @@
 primary:
   persistence:
     enabled: true
-    existingClaim: mariadb-pvc
-
-  extraInitContainers:
-    - name: init-data-clone
+    existingClaim: m-pvc
+    storageClass: ""
+    size: 5Gi
+  initContainers:
+    - name: clone-sql
       image: alpine/git
       command: ["/bin/sh", "-c"]
       args:
-        - git clone https://github.com/kt-cloudnative2024/init_container /tmp/init && \
-          cp /tmp/init/*.sql /docker-entrypoint-initdb.d/
+        - rm -rf /bitnami/mariadb/init && chown -R 1001:1001 /bitnami/mariadb && git clone https://github.com/kt-cloudnative2024/init_container /bitnami/mariadb/init
       volumeMounts:
         - name: data
-          mountPath: /docker-entrypoint-initdb.d
-
-  extraVolumeMounts:
-    - name: data
-      mountPath: /docker-entrypoint-initdb.d
-
-  extraVolumes:
-    - name: data
-      emptyDir: {}
+          mountPath: /bitnami/mariadb
+  lifecycle:
+    postStart:
+      exec:
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "Waiting for MariaDB to be ready..."
+            until mysqladmin ping -h 127.0.0.1 --silent; do sleep 1; done
+            echo "Running init SQL script..."
+            mysql -uroot -p$MARIADB_ROOT_PASSWORD < /bitnami/mariadb/init/BI_CSYSCD.sql
