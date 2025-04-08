@@ -1,7 +1,7 @@
 primary:
   persistence:
     enabled: true
-    existingClaim: m-pvc
+    existingClaim: mariadb-pvc
     storageClass: ""
     size: 5Gi
   initContainers:
