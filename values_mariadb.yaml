@@ -1,0 +1,23 @@
+primary:
+  persistence:
+    enabled: true
+    existingClaim: mariadb-pvc
+
+  extraInitContainers:
+    - name: init-data-clone
+      image: alpine/git
+      command: ["/bin/sh", "-c"]
+      args:
+        - git clone https://github.com/kt-cloudnative2024/init_container /tmp/init && \
+          cp /tmp/init/*.sql /docker-entrypoint-initdb.d/
+      volumeMounts:
+        - name: data
+          mountPath: /docker-entrypoint-initdb.d
+
+  extraVolumeMounts:
+    - name: data
+      mountPath: /docker-entrypoint-initdb.d
+
+  extraVolumes:
+    - name: data
+      emptyDir: {}
